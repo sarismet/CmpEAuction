@@ -1,0 +1,8 @@
+<resources>
+    <string name="app_name">CmpEAuction</string>
+    <string name="login_logo">Buy the most valuable things with your speed</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_button">Logın</string>
+    <string name="dashboard_title">Dashboard page</string>
+</resources>
