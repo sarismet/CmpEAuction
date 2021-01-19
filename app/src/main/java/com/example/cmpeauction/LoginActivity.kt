@@ -7,6 +7,8 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
+import java.io.BufferedReader
+import java.io.InputStream
 import java.io.OutputStream
 import java.io.StringWriter
 import java.net.Socket
@@ -15,7 +17,7 @@ import kotlin.concurrent.thread
 
 
 class LoginActivity : AppCompatActivity() {
-    val address = "192.168.1.38"
+    val address = "192.168.1.41"
     val port = 22
     var operation:String = "LOGIN"
         private set
@@ -29,7 +31,7 @@ class LoginActivity : AppCompatActivity() {
     fun login(view: View){
         val email = findViewById<EditText>(R.id.login_email).text.toString()
         val password = findViewById<EditText>(R.id.login_password).text.toString()
-        if(email == "i" && password == "i2") {
+        if(email == "sarismet2825@gmail.com" && password == "asd") {
             thread {
                 try{
                     val map = HashMap<String, String>()
@@ -41,8 +43,14 @@ class LoginActivity : AppCompatActivity() {
                     map.put("PAYLOAD",py);
                     val msg:String = JSONObject(map as Map<*, *>).toString()
                     val connection: Socket = Socket(address, port)
+                    println("CONNECTION IS ESTABISHEDDDCONNECTION IS ESTABISHEDDDCONNECTION IS ESTABISHEDDDCONNECTION IS ESTABISHEDDD")
                     val writer: OutputStream = connection.getOutputStream()
                     writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
+
+                    val reader: InputStream = connection.getInputStream()
+                    val stringReader = connection.getInputStream().bufferedReader().readLine();
+                    println("stringRSSSSSeader  -> "+stringReader);
+
                 }catch (e: Exception){
                     System.out.println("Exception ->" + e)
                 }

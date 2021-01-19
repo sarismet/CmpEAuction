@@ -1,23 +1,30 @@
 package com.example.cmpeauction
 
+import android.content.Context
 import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
+import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.text.format.Formatter
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
 import org.json.JSONObject
 import java.io.OutputStream
+import java.net.Inet4Address
+import java.net.NetworkInterface
 import java.net.Socket
+import java.net.SocketException
 import java.nio.charset.Charset
+import java.util.*
+import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 
+
 class SignUpActivity : AppCompatActivity() {
-    val address = "192.168.1.38"
+    var address:String = ""
     val port = 22
     var operation:String = "SIGN_UP"
-        private set
-    var payload:String = ""
         private set
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,20 +42,25 @@ class SignUpActivity : AppCompatActivity() {
             thread {
                 try{
                     val map = HashMap<String, String>()
-                    map.put("OPERATION",this.operation);
+                    map.put("OPERATION", this.operation);
                     val map2 = HashMap<String, String>()
-                    map2.put("EMAIL",email);
-                    map2.put("USERNAME",username_sign_up);
-                    map2.put("PASSWORD",password1);
-                    map2.put("TELNO",telnumber);
+                    map2.put("EMAIL", email);
+                    map2.put("USERNAME", username_sign_up);
+                    map2.put("PASSWORD", password1);
+                    map2.put("TELNO", telnumber);
                     val py:String = JSONObject(map2 as Map<*, *>).toString()
-                    map.put("PAYLOAD",py);
+                    map.put("PAYLOAD", py);
                     val msg:String = JSONObject(map as Map<*, *>).toString()
                     System.out.println("msg is  " + msg)
                     val connection: Socket = Socket(address, port)
                     val writer: OutputStream = connection.getOutputStream()
 
                     writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
+
+                    val stringReader = connection.getInputStream().bufferedReader().readLine();
+
+                    System.out.println("Sign up stringReader ->" + stringReader)
+
                 }catch (e: Exception){
                     System.out.println("Exception ->" + e)
                 }
