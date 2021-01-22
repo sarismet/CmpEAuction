@@ -2,9 +2,7 @@ package com.example.cmpeauction
 
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.view.View
 import android.webkit.WebView
-import android.widget.EditText
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
@@ -12,19 +10,20 @@ import org.json.JSONObject
 import java.io.OutputStream
 import java.net.Socket
 import java.nio.charset.Charset
+import java.text.SimpleDateFormat
 import java.util.*
 import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 
-class Product(link: String, name: String, price: Int, owner: String) {
+class Product(link: String, name: String, price: Int, time: String) {
     var link:String = link
     var name:String = name
     var price:Int = price
-    var owner:String = owner
+    var time:String = time
 }
 
 class AuctionProcessActivity : AppCompatActivity() {
-    var COUNT_DOWN:Long = 72000;
+    var COUNT_DOWN:Long = 300000;
     var address:String = "192.168.1.41"
     val port = 22
     var operation:String = "SHOW"
@@ -40,8 +39,10 @@ class AuctionProcessActivity : AppCompatActivity() {
     fun get_product(){
         try{
             val mapx = HashMap<String, String>()
-            mapx.put("OPERATION","SHOW");
-            mapx.put("PAYLOAD","empty");
+            mapx.put("OPERATION", "SHOW");
+            val sdf = SimpleDateFormat("HH:mm:ss")
+            val currentDate:String = sdf.format(Date())
+            mapx.put("PAYLOAD", currentDate);
             val msgx:String = JSONObject(mapx as Map<*, *>).toString()
             val connectionx: Socket = Socket(address, port)
             val writerx: OutputStream = connectionx.getOutputStream()
@@ -49,8 +50,10 @@ class AuctionProcessActivity : AppCompatActivity() {
             val stringReaderx = connectionx.getInputStream().bufferedReader().readLine();
             var productx:JSONObject = JSONObject(stringReaderx)
             val s = productx.getString("products")
+            val remainingTime = productx.getString("TIME")
+            this.COUNT_DOWN = remainingTime.toLong()
             val gson = Gson()
-            product = gson.fromJson(s,Product::class.java)
+            product = gson.fromJson(s, Product::class.java)
         }catch (e: Exception){
             System.out.println("Exception ->" + e)
         }
