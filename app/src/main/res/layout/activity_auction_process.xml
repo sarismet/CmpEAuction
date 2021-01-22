@@ -23,10 +23,10 @@
             android:id="@+id/text_count_down"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="00:00"
+            android:text="@string/_00_00"
             android:textColor="@android:color/black"
             android:textSize="60sp"
-            app:layout_constraintBottom_toTopOf="@+id/imageView12"
+            app:layout_constraintBottom_toTopOf="@+id/name"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
@@ -36,7 +36,7 @@
             android:id="@+id/text_price"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Price: 105005454"
+            android:text="@string/price_105005454"
             android:textColor="@android:color/black"
             android:textSize="30sp"
             app:layout_constraintBottom_toTopOf="@+id/text_count_down"
@@ -45,27 +45,40 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
 
-        <ImageView
-            android:id="@+id/imageView12"
-            android:layout_width="250dp"
-            android:layout_height="250dp"
+        <TextView
+            android:id="@+id/name"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="name is ***"
+            android:textColor="@android:color/black"
+            android:textSize="19dp"
+            app:layout_constraintBottom_toTopOf="@+id/webview"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.5"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/text_count_down" />
+
+        <WebView
+            android:id="@+id/webview"
+            android:layout_width="285dp"
+            android:layout_height="350dp"
             app:layout_constraintBottom_toTopOf="@+id/button"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/text_count_down"
-            app:srcCompat="@drawable/ic_auction" />
+            app:layout_constraintTop_toBottomOf="@+id/name" />
 
         <Button
             android:id="@+id/button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Buy"
+            android:text="@string/buy"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.5"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/imageView12" />
+            app:layout_constraintTop_toBottomOf="@+id/webview" />
+
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 

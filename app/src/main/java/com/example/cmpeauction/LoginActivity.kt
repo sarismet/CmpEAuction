@@ -43,14 +43,10 @@ class LoginActivity : AppCompatActivity() {
                     map.put("PAYLOAD",py);
                     val msg:String = JSONObject(map as Map<*, *>).toString()
                     val connection: Socket = Socket(address, port)
-                    println("CONNECTION IS ESTABISHEDDDCONNECTION IS ESTABISHEDDDCONNECTION IS ESTABISHEDDDCONNECTION IS ESTABISHEDDD")
                     val writer: OutputStream = connection.getOutputStream()
                     writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
-
                     val reader: InputStream = connection.getInputStream()
                     val stringReader = connection.getInputStream().bufferedReader().readLine();
-                    println("stringRSSSSSeader  -> "+stringReader);
-
                 }catch (e: Exception){
                     System.out.println("Exception ->" + e)
                 }

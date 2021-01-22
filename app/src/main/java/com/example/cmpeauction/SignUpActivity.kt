@@ -1,28 +1,22 @@
 package com.example.cmpeauction
 
-import android.content.Context
 import android.content.Intent
-import android.net.wifi.WifiManager
 import android.os.Bundle
-import android.text.format.Formatter
 import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.Gson
 import org.json.JSONObject
 import java.io.OutputStream
-import java.net.Inet4Address
-import java.net.NetworkInterface
 import java.net.Socket
-import java.net.SocketException
 import java.nio.charset.Charset
-import java.util.*
 import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 
 
 class SignUpActivity : AppCompatActivity() {
-    var address:String = ""
+    var address:String = "192.168.1.41"
     val port = 22
     var operation:String = "SIGN_UP"
         private set
@@ -54,21 +48,14 @@ class SignUpActivity : AppCompatActivity() {
                     System.out.println("msg is  " + msg)
                     val connection: Socket = Socket(address, port)
                     val writer: OutputStream = connection.getOutputStream()
-
                     writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
-
                     val stringReader = connection.getInputStream().bufferedReader().readLine();
-
-                    System.out.println("Sign up stringReader ->" + stringReader)
-
+                    connection.close();
                 }catch (e: Exception){
                     System.out.println("Exception ->" + e)
                 }
             }
-
             val intent = Intent(this, AuctionProcessActivity::class.java)
-
-
             startActivity(intent)
         } else {
             Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show()
