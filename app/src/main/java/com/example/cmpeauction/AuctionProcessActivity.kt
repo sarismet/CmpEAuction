@@ -2,11 +2,19 @@ package com.example.cmpeauction
 
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.view.View
 import android.webkit.WebView
+import android.widget.Button
+import android.widget.EditText
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.OnLifecycleEvent
 import com.google.gson.Gson
+import org.json.JSONArray
 import org.json.JSONObject
+import java.io.InputStream
 import java.io.OutputStream
 import java.net.Socket
 import java.nio.charset.Charset
@@ -22,18 +30,68 @@ class Product(link: String, name: String, price: Int, time: String) {
     var time:String = time
 }
 
+class User(username: String, id: Int, balance: Int) {
+    var username:String = username
+    var id:Int = id
+    var balance:Int = balance
+}
+
 class AuctionProcessActivity : AppCompatActivity() {
     var COUNT_DOWN:Long = 300000;
-    var address:String = "192.168.1.41"
-    val port = 22
+    var address:String = ""
+    val port = 8000
     var operation:String = "SHOW"
         private set
     var product:Product? = null
-
+    val time_left = 0
+    var isTimeToBuy:Boolean = false
+    var user:User? = null
+    var connectionx: Socket? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_auction_process)
-        count_down();
+        val userInfos= intent.getStringExtra("userInfos")
+        var userInfosJson: JSONObject = JSONObject(userInfos)
+        var username = userInfosJson.getString("username")
+        var id = userInfosJson.getInt("id")
+        var balance = userInfosJson.getInt("balance")
+        user = User(username,id,balance);
+        val buttonToBuy = findViewById<Button>(R.id.button)
+        buttonToBuy.setOnClickListener {
+            if (false) {
+                if (product != null && user != null) {
+                    if (user!!.balance.toInt() > product!!.price) {
+                        thread {
+                            val map = HashMap<String, String>()
+                            map.put("OPERATION", "BUY");
+                            val payloadMap = HashMap<String, String>()
+                            payloadMap.put("USERNAME", user!!.username)
+                            payloadMap.put("USERID", user!!.id.toString())
+                            payloadMap.put("PRODUCTNAME", product!!.name)
+                            val py: String = JSONObject(payloadMap as Map<*, *>).toString()
+                            map.put("PAYLOAD", py);
+                            val msg: String = JSONObject(map as Map<*, *>).toString()
+                            val writer: OutputStream = connectionx!!.getOutputStream()
+                            writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
+                            val stringReader = connectionx!!.getInputStream().bufferedReader().readLine();
+                            System.out.println("stringReader -> " + stringReader)
+                            var userInfos: JSONObject = JSONObject(stringReader)
+                            var buyer = userInfos.getString("buyer")
+                            if (buyer == user!!.username) {
+                                user!!.balance = user!!.balance - product!!.price
+                                Toast.makeText(this, "Congratulations!!! You have bought this product", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(this, "Unfortunately this product was bought by$buyer", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
+                }else{
+                    Toast.makeText(this, user!!.username, Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "It is not time to buy this product wait until the timer show 05:00"+user!!.username, Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     fun get_product(){
@@ -44,10 +102,11 @@ class AuctionProcessActivity : AppCompatActivity() {
             val currentDate:String = sdf.format(Date())
             mapx.put("PAYLOAD", currentDate);
             val msgx:String = JSONObject(mapx as Map<*, *>).toString()
-            val connectionx: Socket = Socket(address, port)
-            val writerx: OutputStream = connectionx.getOutputStream()
+            connectionx = Socket(address, port)
+            val writerx: OutputStream = connectionx!!.getOutputStream()
             writerx.write((msgx + '\n').toByteArray(Charset.defaultCharset()))
-            val stringReaderx = connectionx.getInputStream().bufferedReader().readLine();
+            val stringReaderx = connectionx!!.getInputStream().bufferedReader().readLine();
+            System.out.println("stringReaderx is in get product ->" + stringReaderx)
             var productx:JSONObject = JSONObject(stringReaderx)
             val s = productx.getString("products")
             val remainingTime = productx.getString("TIME")
@@ -59,8 +118,12 @@ class AuctionProcessActivity : AppCompatActivity() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        count_down()
+    }
+    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     fun count_down(){
-
         val job = thread {
             get_product()
         }
@@ -77,6 +140,10 @@ class AuctionProcessActivity : AppCompatActivity() {
         var price_product:Int = (product?.price ?: 0)
         object : CountDownTimer(COUNT_DOWN, 1000) {
             override fun onTick(millisUntilFinished: Long) {
+                val mil: Long = (millisUntilFinished / 1000)
+                if(mil<=300){
+                    isTimeToBuy = true
+                }
                 val minutes = ((millisUntilFinished / 1000) / 60).toString()
                 val seconds = ((millisUntilFinished / 1000) % 60).toString()
                 val time_left =  minutes + ":" + seconds
@@ -92,6 +159,7 @@ class AuctionProcessActivity : AppCompatActivity() {
                 count_down()
             }
         }.start()
+
 
     }
 

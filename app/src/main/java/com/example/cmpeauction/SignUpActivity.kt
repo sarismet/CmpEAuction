@@ -16,13 +16,16 @@ import kotlin.concurrent.thread
 
 
 class SignUpActivity : AppCompatActivity() {
-    var address:String = "192.168.1.41"
-    val port = 22
+    var address:String = ""
+    val port = 8000
     var operation:String = "SIGN_UP"
         private set
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_sign_up)
+        var intent2 = getIntent()
+        val dataToSend2= intent2.getStringExtra("sa")
+        System.out.println("dataToSend ın create is "+dataToSend2)
     }
 
     fun sign_up(view: View){
@@ -33,6 +36,7 @@ class SignUpActivity : AppCompatActivity() {
         val telnumber = findViewById<EditText>(R.id.telno).text.toString()
 
         if(password1==password2) {
+            var userModelString:String = "NULL"
             thread {
                 try{
                     val map = HashMap<String, String>()
@@ -50,15 +54,25 @@ class SignUpActivity : AppCompatActivity() {
                     val writer: OutputStream = connection.getOutputStream()
                     writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
                     val stringReader = connection.getInputStream().bufferedReader().readLine();
+                    System.out.println("stringReader is ->"+stringReader)
+                    var userInfos:JSONObject = JSONObject(stringReader)
+                    userModelString = userInfos.getString("user")
                     connection.close();
                 }catch (e: Exception){
-                    System.out.println("Exception ->" + e)
+                    System.out.println(" Probably NULL is returned")
                 }
+            }.join()
+            if(userModelString!="NULL"){
+                val intent = Intent(this, AuctionProcessActivity::class.java)
+                intent.putExtra("userInfos",userModelString)
+                startActivity(intent)
             }
-            val intent = Intent(this, AuctionProcessActivity::class.java)
-            startActivity(intent)
+            else {
+                Toast.makeText(this, "Sign Up is not successful userModelString is $userModelString ", Toast.LENGTH_SHORT).show()
+            }
+
         } else {
-            Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "passwords do not match", Toast.LENGTH_SHORT).show()
         }
     }
 }

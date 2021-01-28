@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.gson.Gson
 import org.json.JSONObject
 import java.io.BufferedReader
 import java.io.InputStream
@@ -17,12 +18,11 @@ import kotlin.concurrent.thread
 
 
 class LoginActivity : AppCompatActivity() {
-    val address = "192.168.1.41"
-    val port = 22
+    var address:String = ""
+    val port = 8000
     var operation:String = "LOGIN"
         private set
-    var payload:String = ""
-        private set
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
@@ -31,7 +31,7 @@ class LoginActivity : AppCompatActivity() {
     fun login(view: View){
         val email = findViewById<EditText>(R.id.login_email).text.toString()
         val password = findViewById<EditText>(R.id.login_password).text.toString()
-        if(email == "sarismet2825@gmail.com" && password == "asd") {
+        var userInfos:String = "NULL"
             thread {
                 try{
                     val map = HashMap<String, String>()
@@ -45,19 +45,23 @@ class LoginActivity : AppCompatActivity() {
                     val connection: Socket = Socket(address, port)
                     val writer: OutputStream = connection.getOutputStream()
                     writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
-                    val reader: InputStream = connection.getInputStream()
-                    val stringReader = connection.getInputStream().bufferedReader().readLine();
-                }catch (e: Exception){
-                    System.out.println("Exception ->" + e)
-                }
-            }
-            val intent = Intent(this, AuctionProcessActivity::class.java)
-            startActivity(intent)
-        } else {
-            Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show()
-        }
-    }
+                    val readedData = connection.getInputStream().bufferedReader().readLine();
+                    System.out.println("readedData is "+readedData)
+                    var user: JSONObject = JSONObject(readedData)
+                    userInfos = user.getString("user")
 
+                }catch (e: Exception){
+                    System.out.println(" Probably NULL is returned")
+                }
+            }.join()
+            if (userInfos != "NULL") {
+                val intent = Intent(this, AuctionProcessActivity::class.java)
+                intent.putExtra("userInfos",userInfos)
+                startActivity(intent)
+            }else{
+                Toast.makeText(this, "Invalid email or password", Toast.LENGTH_SHORT).show()
+            }
+    }
     fun activateSignUp(view: View){
         val intent = Intent(this, SignUpActivity::class.java)
         startActivity(intent)
