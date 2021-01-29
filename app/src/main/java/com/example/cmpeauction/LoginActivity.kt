@@ -1,10 +1,17 @@
 package com.example.cmpeauction
 
+import android.app.AlertDialog
+import android.app.Dialog
 import android.content.Intent
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
+import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
-import android.widget.EditText
-import android.widget.Toast
+import android.view.Window
+import android.webkit.WebView
+import android.widget.*
 import androidx.appcompat.app.AppCompatActivity
 import com.google.gson.Gson
 import org.json.JSONObject
@@ -18,14 +25,52 @@ import kotlin.concurrent.thread
 
 
 class LoginActivity : AppCompatActivity() {
-    var address:String = ""
+    //var address:String = "3.138.200.224"
+    var address:String = "192.168.1.33"
     val port = 8000
     var operation:String = "LOGIN"
         private set
-
+    var dialog:Dialog? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_login)
+        dialog = Dialog(this)
+    }
+
+    fun winAlert() {
+
+        dialog!!.setContentView(R.layout.win_layout)
+        dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        var imageViewClose:ImageView = this.dialog!!.findViewById<ImageView>(R.id.ImageViewClose)
+        var btnOk:Button = this.dialog!!.findViewById<Button>(R.id.btnOK)
+
+        imageViewClose.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+
+        btnOk.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+        dialog!!.show()
+    }
+
+    fun loseAlert() {
+
+        dialog!!.setContentView(R.layout.lose_layout)
+        dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+
+        var imageViewClose:ImageView = this.dialog!!.findViewById<ImageView>(R.id.ImageViewClose)
+        var btnOk:Button = this.dialog!!.findViewById<Button>(R.id.btnOK)
+
+        imageViewClose.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+
+        btnOk.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+        dialog!!.show()
     }
 
     fun login(view: View){

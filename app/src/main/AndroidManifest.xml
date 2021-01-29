@@ -1,9 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.cmpeauction">
-<uses-permission android:name="android.permission.INTERNET" />
-<uses-feature android:name="android.hardware.bluetooth_le" android:required="true" />
-<uses-permission android:name="android.permission.BLUETOOTH"/>
+
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="true" />
+
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -11,8 +17,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.CmpEAuction">
-        android:usesCleartextTraffic="true">
-        <activity android:name=".AuctionProcessActivity"></activity>
+        <activity android:name=".MainActivity2"></activity>
+        <activity android:name=".custom_dialog" />
+        <activity android:name=".AuctionProcessActivity" />
         <activity
             android:name=".SignUpActivity"
             android:label="SignUp" />
