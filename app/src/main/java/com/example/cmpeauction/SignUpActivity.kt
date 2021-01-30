@@ -16,8 +16,8 @@ import kotlin.concurrent.thread
 
 
 class SignUpActivity : AppCompatActivity() {
-    //var address:String = "3.138.200.224"
-    var address:String = "192.168.1.33"
+    var address:String = "3.138.200.224"
+    //var address:String = "192.168.1.33"
     val port = 8000
     var operation:String = "SIGN_UP"
         private set

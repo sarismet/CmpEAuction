@@ -13,10 +13,10 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.OnLifecycleEvent
 import com.google.gson.Gson
-import org.json.JSONArray
 import org.json.JSONObject
-import java.io.InputStream
 import java.io.OutputStream
+import java.math.BigDecimal
+import java.math.RoundingMode
 import java.net.Socket
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
@@ -24,22 +24,23 @@ import java.util.*
 import kotlin.collections.HashMap
 import kotlin.concurrent.thread
 
-class Product(link: String, name: String, price: Int, time: String, soldTo: String) {
+class Product(link: String, name: String, price: Double, time: String, soldTo: String) {
     var link:String = link
     var name:String = name
-    var price:Int = price
+    var price:Double = price
     var time:String = time
     var soldTo:String = soldTo
 }
 
-class User(username: String, id: Int, balance: Int) {
+class User(username: String, id: Int, balance: Double, uuid:String) {
     var username:String = username
     var id:Int = id
-    var balance:Int = balance
+    var balance:Double = balance
+    var uuid:String = uuid
 }
 
 class AuctionProcessActivity : AppCompatActivity() {
-    var COUNT_DOWN:Long = 300000;
+    var COUNT_DOWN:Long = 60000;
     //var address:String = "3.138.200.224"
     var address:String = "192.168.1.33"
     val port = 8000
@@ -51,25 +52,29 @@ class AuctionProcessActivity : AppCompatActivity() {
     var user:User? = null
     var connectionx: Socket? = null
     var dialog:Dialog? = null
+    var max_price:Double = 0.0
+    var remainingT:Long = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_auction_process)
         val userInfos= intent.getStringExtra("userInfos")
-        var userInfosJson: JSONObject = JSONObject(userInfos)
-        var username = userInfosJson.getString("username")
-        var id = userInfosJson.getInt("id")
-        var balance = userInfosJson.getInt("balance")
-        user = User(username,id,balance);
-
+        val userInfosJson: JSONObject = JSONObject(userInfos)
+        val username = userInfosJson.getString("username")
+        val id = userInfosJson.getInt("id")
+        val balance = userInfosJson.getDouble("balance")
+        val uuid = userInfosJson.getString("uuid")
+        user = User(username,id,balance,uuid);
         this.dialog = Dialog(this)
-
+        this.max_price = 0.0
     }
-    fun buyAction() {
 
+    fun buyAction() {
         val buttonToBuy = findViewById<Button>(R.id.buttonToBuy)
         buttonToBuy.setOnClickListener {
+            System.out.println("isTimeToBuy -> " + isTimeToBuy)
             if (isTimeToBuy) {
-                System.out.println("isTimeToBuy -> " + isTimeToBuy)
+                System.out.println("product  user -> " + product!!.soldTo+" - "+user!!.username)
                 if (product != null && user != null) {
                     if (user!!.balance > product!!.price) {
                         if (product!!.soldTo.equals("NULL")) {
@@ -82,6 +87,7 @@ class AuctionProcessActivity : AppCompatActivity() {
                                     payloadMap.put("USERNAME", user!!.username)
                                     payloadMap.put("USERID", user!!.id.toString())
                                     payloadMap.put("PRODUCTNAME", product!!.name)
+                                    payloadMap.put("PRODUCTPRICE", product!!.price.toString())
                                     val py: String = JSONObject(payloadMap as Map<*, *>).toString()
                                     map.put("PAYLOAD", py);
                                     var connectionbuy = Socket(address, port)
@@ -94,7 +100,6 @@ class AuctionProcessActivity : AppCompatActivity() {
                                     var userInfos: JSONObject = JSONObject(stringReader)
                                     buyer = userInfos.getString("buyer")
                                     Log.d("BUYYER",buyer)
-                                    //this.connectionx!!.close()
                                     connectionbuy.close()
                                 }catch (e: Exception){
                                     System.out.println("Exception ->" + e)
@@ -105,39 +110,94 @@ class AuctionProcessActivity : AppCompatActivity() {
                                 user!!.balance = user!!.balance - product!!.price
                                 product!!.soldTo = user!!.username
                                 winAlert()
-                                Toast.makeText(this, "Congratulations!!! You have bought this product", Toast.LENGTH_SHORT).show()
-                            } else {
+                            }
+                            else if(buyer.equals("NOT_ENOUGH")){
+                                notEnoughAlert()
+                            }
+                            else {
                                 loseAlert(buyer)
-                                Toast.makeText(this, "Unfortunately this product was bought by "+buyer +" AND I am "+user!!.username, Toast.LENGTH_SHORT).show()
                             }
                         }else{
-                            Toast.makeText(this, "Unfortunately this product was bought by "+product!!.soldTo, Toast.LENGTH_SHORT).show()
+                            waitAlert(product!!.soldTo)
                         }
-
-
-
+                    }else{
+                        notEnoughAlert()
                     }
                 }else{
                     Toast.makeText(this, user!!.username, Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(this, "It is not time to buy this product wait until the timer show 05:00"+user!!.username, Toast.LENGTH_SHORT).show()
+                remainingAlert(this.remainingT-60000)
             }
         }
     }
+
+    fun notEnoughAlert() {
+        dialog!!.setContentView(R.layout.not_enough_layout)
+        dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val imageViewClose: ImageView = this.dialog!!.findViewById<ImageView>(R.id.ImageViewClose)
+        val btnOk:Button = this.dialog!!.findViewById<Button>(R.id.btnOK)
+        imageViewClose.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+        btnOk.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+        dialog!!.show()
+    }
+
     fun winAlert() {
         System.out.println("Win Alert is called")
         dialog!!.setContentView(R.layout.win_layout)
         dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
         val imageViewClose: ImageView = this.dialog!!.findViewById<ImageView>(R.id.ImageViewClose)
         val btnOk:Button = this.dialog!!.findViewById<Button>(R.id.btnOK)
-
         imageViewClose.setOnClickListener(View.OnClickListener () {
             dialog!!.dismiss()
         })
+        btnOk.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+        dialog!!.show()
+    }
 
+    fun waitAlert(buyyerName:String) {
+        System.out.println("Win Alert is called")
+        dialog!!.setContentView(R.layout.wait_layout)
+        dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val imageViewClose: ImageView = this.dialog!!.findViewById<ImageView>(R.id.ImageViewClose)
+        val btnOk:Button = this.dialog!!.findViewById<Button>(R.id.btnOK)
+        imageViewClose.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+        val waitText: TextView = this.dialog!!.findViewById<TextView>(R.id.waitText)
+        waitText.text = "The product is bought by "+buyyerName
+        btnOk.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+        dialog!!.show()
+    }
 
+    fun remainingAlert(remainingTime: Long) {
+        dialog!!.setContentView(R.layout.clock_layout)
+        dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+        val imageViewClose: ImageView = this.dialog!!.findViewById<ImageView>(R.id.ImageViewClose)
+        val btnOk:Button = this.dialog!!.findViewById<Button>(R.id.btnOK)
+        imageViewClose.setOnClickListener(View.OnClickListener () {
+            dialog!!.dismiss()
+        })
+        val waitText: TextView = this.dialog!!.findViewById<TextView>(R.id.NextSaleTime)
+        object : CountDownTimer(remainingTime, 1000) {
+            override fun onTick(millisUntilFinished: Long) {
+                val minutes = ((millisUntilFinished / 1000) / 60).toString()
+                val seconds = ((millisUntilFinished / 1000) % 60).toString()
+                val time_left =  minutes + ":" + seconds
+                waitText.setText(time_left)
+            }
+            override fun onFinish() {
+                Toast.makeText(this@AuctionProcessActivity, "Now, You can buy it", Toast.LENGTH_SHORT).show()
+            }
+        }.start()
         btnOk.setOnClickListener(View.OnClickListener () {
             dialog!!.dismiss()
         })
@@ -145,63 +205,36 @@ class AuctionProcessActivity : AppCompatActivity() {
     }
 
     fun loseAlert(buyyerName:String) {
-
         dialog!!.setContentView(R.layout.lose_layout)
         dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
-
         var imageViewClose: ImageView = this.dialog!!.findViewById<ImageView>(R.id.ImageViewClose)
         var btnOk:Button = this.dialog!!.findViewById<Button>(R.id.btnOK)
-
         imageViewClose.setOnClickListener(View.OnClickListener () {
             dialog!!.dismiss()
         })
-
         val loserText: TextView = this.dialog!!.findViewById<TextView>(R.id.loserText)
-        loserText.text = "The product is bought by "+buyyerName
+        if(buyyerName==user!!.username) {
+            loserText.text = "You already bought this"
+        }
+        else{
+            loserText.text = "The product is bought by "+buyyerName
+        }
         btnOk.setOnClickListener(View.OnClickListener () {
             dialog!!.dismiss()
         })
         dialog!!.show()
     }
 
-    fun buy_producy(){
-        try{
-            val map = HashMap<String, String>()
-            map.put("OPERATION", "BUY");
-            val payloadMap = HashMap<String, String>()
-            payloadMap.put("USERNAME", user!!.username)
-            payloadMap.put("USERID", user!!.id.toString())
-            payloadMap.put("PRODUCTNAME", product!!.name)
-            val py: String = JSONObject(payloadMap as Map<*, *>).toString()
-            map.put("PAYLOAD", py);
-            var connectionbuy = Socket(address, port)
-            val msg: String = JSONObject(map as Map<*, *>).toString()
-            val writer: OutputStream = connectionbuy.getOutputStream()
-            System.out.println("msg -> " + msg)
-            writer.write((msg + '\n').toByteArray(Charset.defaultCharset()))
-            val stringReader = connectionbuy.getInputStream().bufferedReader().readLine();
-            System.out.println("stringReader -> " + stringReader)
-            var userInfos: JSONObject = JSONObject(stringReader)
-            var buyer = userInfos.getString("buyer")
-            Log.d("BUYYER",buyer)
-            //this.connectionx!!.close()
-            connectionbuy.close()
-        }catch (e: Exception){
-            System.out.println("Exception ->" + e)
-        }
-    }
-
     fun get_product(){
         try{
             val mapx = HashMap<String, String>()
             mapx.put("OPERATION", "SHOW");
-            val sdf = SimpleDateFormat("HH:mm:ss")
-            val currentDate:String = sdf.format(Date())
-            mapx.put("PAYLOAD", currentDate);
+            mapx.put("UUID", this.user!!.uuid);
             val msgx:String = JSONObject(mapx as Map<*, *>).toString()
             this.connectionx = Socket(address, port)
             val writerx: OutputStream = connectionx!!.getOutputStream()
             writerx.write((msgx + '\n').toByteArray(Charset.defaultCharset()))
+            Log.d("msgx",msgx)
             val stringReaderx = connectionx!!.getInputStream().bufferedReader().readLine();
             System.out.println("stringReaderx is in get product ->" + stringReaderx)
             var productx:JSONObject = JSONObject(stringReaderx)
@@ -210,21 +243,34 @@ class AuctionProcessActivity : AppCompatActivity() {
             this.COUNT_DOWN = remainingTime.toLong()
             val gson = Gson()
             product = gson.fromJson(s, Product::class.java)
+            this.isTimeToBuy = false
+            this.max_price = product!!.price
+            var fullTime: Double = 60000.0
+            Log.d("CGOT", COUNT_DOWN.toString())
+            if(this.COUNT_DOWN<fullTime){
+                var div = this.COUNT_DOWN/10000.0
+                var diff = div-div.toInt()
+                Log.d("diff", diff.toString())
+                var part = 0
+                if(diff>0.0){
+                    part = div.toInt()+1
+                }
+                Log.d("part", part.toString())
+                this.product!!.price = ((10-(6-part))*product!!.price/10.0)
+                Log.d("newprice", this.product!!.price.toString())
+            }
             this.connectionx!!.close()
         }catch (e: Exception){
             System.out.println("Exception ->" + e)
         }
     }
-
     override fun onResume() {
         super.onResume()
         buyAction()
         count_down()
-
-
     }
-    @OnLifecycleEvent(Lifecycle.Event.ON_RESUME)
     fun count_down(){
+        Log.d("count_down","count_down is invoked")
         val job = thread {
             get_product()
         }
@@ -237,33 +283,37 @@ class AuctionProcessActivity : AppCompatActivity() {
         price_Text.text = "Price : "+(product?.price ?: 0).toString()
         val name_Text: TextView = findViewById(R.id.name)
         name_Text.text = (product?.name ?: "")
-        var count:Int = 30
-        var price_product:Int = (product?.price ?: 0)
+        var price_product:Double = (product?.price ?: 0.0)
+        Log.d("CPLAY ",COUNT_DOWN.toString())
         object : CountDownTimer(COUNT_DOWN, 1000) {
             override fun onTick(millisUntilFinished: Long) {
-                val mil: Long = (millisUntilFinished / 1000)
-                if(mil<=300){
-                    isTimeToBuy = true
-                }
                 val minutes = ((millisUntilFinished / 1000) / 60).toString()
                 val seconds = ((millisUntilFinished / 1000) % 60).toString()
+                remainingT=millisUntilFinished
+                val sec = ((millisUntilFinished / 1000) % 60)
+
+                var div = millisUntilFinished/10000.0
+                var diff = div-div.toInt()
+
                 val time_left =  minutes + ":" + seconds
                 mTextViewCountDown.setText(time_left)
-                count--
-                if(count == 0){
-                    count = 30
-                    price_product = price_product-15
-                    price_Text.text = "Price : "+price_product.toString()
+                price_Text.text = "Price : "+price_product.toString()
+
+                if(minutes.equals("0")){
+                    Log.d("diff ",diff.toString()+" - sec - "+sec)
+                    isTimeToBuy = true
+                    if(diff<0.1&&product!!.soldTo.equals("NULL")){
+                        price_product = price_product-max_price/10.0
+                        product!!.price = price_product
+                    }
                 }
             }
             override fun onFinish() {
+                Log.d("onFinish ","onFinish is invoked")
                 count_down()
             }
         }.start()
 
-
     }
-
-
 }
 
