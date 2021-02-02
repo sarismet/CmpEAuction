@@ -41,8 +41,8 @@ class User(username: String, id: Int, balance: Double, uuid:String) {
 
 class AuctionProcessActivity : AppCompatActivity() {
     var COUNT_DOWN:Long = 60000;
-    //var address:String = "3.138.200.224"
-    var address:String = "192.168.1.33"
+    var address:String = "3.138.200.224"
+    //var address:String = "192.168.1.33"
     val port = 8000
     var operation:String = "SHOW"
         private set
@@ -67,6 +67,8 @@ class AuctionProcessActivity : AppCompatActivity() {
         user = User(username,id,balance,uuid);
         this.dialog = Dialog(this)
         this.max_price = 0.0
+
+
     }
 
     fun buyAction() {
@@ -116,6 +118,7 @@ class AuctionProcessActivity : AppCompatActivity() {
                             }
                             else {
                                 loseAlert(buyer)
+                                product!!.soldTo = buyer
                             }
                         }else{
                             waitAlert(product!!.soldTo)
@@ -148,6 +151,8 @@ class AuctionProcessActivity : AppCompatActivity() {
 
     fun winAlert() {
         System.out.println("Win Alert is called")
+        val wallet = findViewById<TextView>(R.id.wallet)
+        wallet.text = user!!.balance.toString()+"$"
         dialog!!.setContentView(R.layout.win_layout)
         dialog!!.window?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
         val imageViewClose: ImageView = this.dialog!!.findViewById<ImageView>(R.id.ImageViewClose)
@@ -275,44 +280,50 @@ class AuctionProcessActivity : AppCompatActivity() {
             get_product()
         }
         job.join()
+        val wallet = findViewById<TextView>(R.id.wallet)
+        wallet.text = user!!.balance.toString()+"$"
         val myWebView: WebView = findViewById(R.id.webview)
-        val html:String = "<html><body><img src=\"" + (product?.link ?: "") + "\" width=\"100%\" height=\"100%\"\"/></body></html>";
+        var defaultUrl:String = "https://bupazarbucket.s3.eu-central-1.amazonaws.com/media/question.png"
+        val html:String = "<html><body><img src=\"" + (product?.link ?: defaultUrl) + "\" width=\"100%\" height=\"100%\"\"/></body></html>";
         myWebView.loadData(html, "text/html", null);
         val mTextViewCountDown = findViewById<TextView>(R.id.text_count_down)
         val price_Text: TextView = findViewById(R.id.text_price)
         price_Text.text = "Price : "+(product?.price ?: 0).toString()
         val name_Text: TextView = findViewById(R.id.name)
-        name_Text.text = (product?.name ?: "")
+        name_Text.text = (product?.name ?: "No Name Found")
         var price_product:Double = (product?.price ?: 0.0)
         Log.d("CPLAY ",COUNT_DOWN.toString())
-        object : CountDownTimer(COUNT_DOWN, 1000) {
-            override fun onTick(millisUntilFinished: Long) {
-                val minutes = ((millisUntilFinished / 1000) / 60).toString()
-                val seconds = ((millisUntilFinished / 1000) % 60).toString()
-                remainingT=millisUntilFinished
-                val sec = ((millisUntilFinished / 1000) % 60)
+        if (product?.link != null){
+            object : CountDownTimer(COUNT_DOWN, 1000) {
+                override fun onTick(millisUntilFinished: Long) {
+                    val minutes = ((millisUntilFinished / 1000) / 60).toString()
+                    val seconds = ((millisUntilFinished / 1000) % 60).toString()
+                    remainingT=millisUntilFinished
+                    val sec = ((millisUntilFinished / 1000) % 60)
 
-                var div = millisUntilFinished/10000.0
-                var diff = div-div.toInt()
+                    var div = millisUntilFinished/10000.0
+                    var diff = div-div.toInt()
 
-                val time_left =  minutes + ":" + seconds
-                mTextViewCountDown.setText(time_left)
-                price_Text.text = "Price : "+price_product.toString()
+                    val time_left =  minutes + ":" + seconds
+                    mTextViewCountDown.setText(time_left)
+                    price_Text.text = "Price : "+price_product.toInt().toString()+"$"
 
-                if(minutes.equals("0")){
-                    Log.d("diff ",diff.toString()+" - sec - "+sec)
-                    isTimeToBuy = true
-                    if(diff<0.1&&product!!.soldTo.equals("NULL")){
-                        price_product = price_product-max_price/10.0
-                        product!!.price = price_product
+                    if(minutes.equals("0")){
+                        Log.d("diff ",diff.toString()+" - sec - "+sec)
+                        isTimeToBuy = true
+                        if(diff<0.1&&product!!.soldTo.equals("NULL")){
+                            price_product = price_product-max_price/10.0
+                            product!!.price = price_product
+                        }
                     }
                 }
-            }
-            override fun onFinish() {
-                Log.d("onFinish ","onFinish is invoked")
-                count_down()
-            }
-        }.start()
+                override fun onFinish() {
+                    Log.d("onFinish ","onFinish is invoked")
+                    count_down()
+                }
+            }.start()
+        }
+
 
     }
 }
